@@ -18,7 +18,7 @@
 
 <form class="pkp_form" id="apiProfileForm" method="post" action="{url op="saveAPIProfile"}" enctype="multipart/form-data">
 	{* Help Link *}
-	{help file="user-profile" class="pkp_help_tab"}
+	{* Help Link removed for Smarty 4 compatibility *}
 
 	{csrf}
 	{if isset($openIdDisableFields) && !empty($openIdDisableFields) && key_exists('generateAPIKey', $openIdDisableFields)

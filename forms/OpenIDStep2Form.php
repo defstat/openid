@@ -349,7 +349,7 @@ class OpenIDStep2Form extends Form
 
 		$user->setDateRegistered(Core::getCurrentDate());
 		$user->setInlineHelp(1);
-		$user->setPassword(Validation::encryptCredentials($this->getData('username'), openssl_random_pseudo_bytes(16)));
+		$user->setPassword(Validation::encryptCredentials($this->getData('username'), base64_encode(random_bytes(16))));
 
 		Repo::user()->add($user);
 		
@@ -359,14 +359,12 @@ class OpenIDStep2Form extends Form
 
 			// Save the selected roles or assign the Reader role if none selected
 			if ($contextData->IsInContext() && !$this->getData('reviewerGroup')) {
-				$defaultReaderGroups = UserGroup::IsDefault(true)
-					->withContextIds([$contextData->getId()])
-					->withRoleIds([Role::ROLE_ID_READER])
-					->get();
-				
-				if ($defaultReaderGroups->isNotEmpty()) {
-					$defaultReaderGroup = $defaultReaderGroups->first();
-					Repo::userGroup()->assignUserToGroup($user->getId(), $defaultReaderGroup->getId());
+				$defaultReaderGroup = Repo::userGroup()->getByRoleIds(
+					[Role::ROLE_ID_READER], $contextData->getId(), true
+				)->first();
+
+				if ($defaultReaderGroup) {
+					Repo::userGroup()->assignUserToGroup($user->getId(), $defaultReaderGroup->id);
 				}
 			} else {
 				$userFormHelper = new UserFormHelper();

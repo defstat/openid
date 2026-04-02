@@ -17,7 +17,7 @@
 
 <form class="pkp_form" id="contactForm" method="post" action="{url op="saveContact"}">
 	{* Help Link *}
-	{help file="user-profile" class="pkp_help_tab"}
+	{* Help Link removed for Smarty 4 compatibility *}
 
 	{csrf}
 

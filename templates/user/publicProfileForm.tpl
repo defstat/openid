@@ -10,7 +10,7 @@
  *}
 
 {* Help Link *}
-{help file="user-profile" class="pkp_help_tab"}
+{* Help Link removed for Smarty 4 compatibility *}
 
 <script type="text/javascript">
 	$(function() {ldelim}
