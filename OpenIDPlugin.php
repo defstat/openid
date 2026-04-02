@@ -452,10 +452,55 @@ class OpenIDPlugin extends GenericPlugin
 	public static function getOpenIDSettings(OpenIDPlugin $plugin, ?int $contextId = null): ?array
 	{
 		$settingsJson = $plugin->getSetting($contextId, 'openIDSettings');
-		return $settingsJson ? json_decode($settingsJson, true) : null;
+		$settings = $settingsJson ? json_decode($settingsJson, true) : null;
+
+		// Decrypt client secrets
+		if ($settings && isset($settings["provider"]) && is_array($settings["provider"])) {
+			foreach ($settings["provider"] as &$provider) {
+				if (!empty($provider["clientSecret"])) {
+					$provider["clientSecret"] = self::decryptSecret($provider["clientSecret"]);
+				}
+			}
+			unset($provider);
+		}
+
+		return $settings;
 	}
 
-	public static function getContextData(PKPRequest $request): ContextData
+	
+	/**
+	 * Encrypt a client secret for storage in the database.
+	 * Uses Laravel Crypt facade (AES-256-CBC with random IV via app_key).
+	 * Requires app_key in config.inc.php. Logs warning on failure.
+	 */
+	public static function encryptSecret(string $value): string
+	{
+		try {
+			return \Illuminate\Support\Facades\Crypt::encryptString($value);
+		} catch (\Exception $e) {
+			error_log("openidplugin WARNING: Failed to encrypt client secret — app_key may be missing from config.inc.php. Storing in plaintext. Error: " . $e->getMessage());
+			return $value;
+		}
+	}
+
+	/**
+	 * Decrypt a client secret from the database.
+	 * Handles both encrypted and legacy plaintext values gracefully.
+	 * Note: clientId is intentionally NOT encrypted (public in auth URL).
+	 */
+	public static function decryptSecret(string $value): string
+	{
+		try {
+			return \Illuminate\Support\Facades\Crypt::decryptString($value);
+		} catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+			return $value;
+		} catch (\Exception $e) {
+			error_log("openidplugin WARNING: Failed to decrypt client secret — app_key may have changed. Error: " . $e->getMessage());
+			return $value;
+		}
+	}
+
+public static function getContextData(PKPRequest $request): ContextData
 	{
 		$context = $request->getContext();
 		$site = $request->getSite();
